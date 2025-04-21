@@ -33,15 +33,32 @@ runs:
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Zip and upload to S3
+    - name: Zip contents and upload to S3
       shell: bash
       run: |
-        ZIP_NAME="${{ inputs.project-name }}-${{ github.run_id }}-${{ github.run_number }}.zip"
-        S3_BUILD_PATH="${{ inputs.s3-base-path }}/${{ inputs.project-name }}-${{ github.run_id }}/${ZIP_NAME}"
-        echo "Zipping directory: ${{ inputs.source-directory }}"
-        zip -r "${ZIP_NAME}" "${{ inputs.source-directory }}"
-        aws s3 cp "${ZIP_NAME}" "${S3_BUILD_PATH}"
-        echo "Artifact uploaded to: ${S3_BUILD_PATH}"
+        set -e
+
+        PROJECT_NAME="${{ inputs.project-name }}"
+        RUN_ID="${{ inputs.run-id }}"
+        RUN_NUMBER="${{ inputs.run-number }}"
+        SOURCE_DIRECTORY="${{ inputs.source-directory }}"
+        S3_BASE_PATH="${{ inputs.s3-base-path }}"
+
+        ZIP_NAME="${PROJECT_NAME}-${RUN_ID}-${RUN_NUMBER}.zip"
+        ABS_SOURCE_DIR="$(realpath "$SOURCE_DIRECTORY")"
+        PARENT_DIR="$(dirname "$ABS_SOURCE_DIR")"
+        ZIP_PATH="${PARENT_DIR}/${ZIP_NAME}"
+        S3_BUILD_PATH="${S3_BASE_PATH}/${PROJECT_NAME}-${RUN_ID}/${ZIP_NAME}"
+
+        cd "$ABS_SOURCE_DIR"
+        zip -r "$ZIP_PATH" . > /dev/null
+        cd - > /dev/null
+
+        aws s3 cp "$ZIP_PATH" "$S3_BUILD_PATH"
+
+        echo "✅ Upload complete: $S3_BUILD_PATH"
+
+        rm "$ZIP_PATH"
 
 branding:
     icon: "arrow-up"
