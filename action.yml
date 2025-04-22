@@ -57,6 +57,8 @@ runs:
         echo "✅ Upload complete: $S3_BUILD_PATH"
 
         rm "$ZIP_PATH"
+        rm -r "$SOURCE_DIRECTORY"
+        echo "✅ Clean complete: $ZIP_NAME & $SOURCE_DIRECTORY"
 
 branding:
     icon: "arrow-up"
